@@ -54,16 +54,40 @@ ifeq ($(CONFIG_TIKAL_USCC),y)
 snd-soc-wm8994-objs := wm8994_samsung.o wm8994_tikal.o
 else
 ifeq ($(CONFIG_MACH_STEALTHV),y)
+ifeq ($(CONFIG_SND_VOODOO),y)
+snd-soc-wm8994-objs := wm8994_samsung.o wm8994_stealthv.o wm8994_voodoo.o
+else
 snd-soc-wm8994-objs := wm8994_samsung.o wm8994_stealthv.o
+<<<<<<< HEAD
+=======
+endif
+ifeq ($(CONFIG_SND_SOC_A1026),y)
+snd-soc-a1026-objs := A1026_i2c_drv.o
+endif
+>>>>>>> cd4ec4b... Voodoo Sound V10, courtesy of supercurio
 else
 ifeq ($(CONFIG_MACH_AEGIS),y)
+ifeq ($(CONFIG_SND_VOODOO),y)
+snd-soc-wm8994-objs := wm8994_samsung.o wm8994_aegis.o wm8994_voodoo.o
+else
 snd-soc-wm8994-objs := wm8994_samsung.o wm8994_aegis.o
+endif
 else
 ifeq ($(CONFIG_MACH_VIPER),y)
+ifeq ($(CONFIG_SND_VOODOO),y)
+snd-soc-wm8994-objs := wm8994_samsung.o wm8994_viper.o wm8994_voodoo.o
+else
 snd-soc-wm8994-objs := wm8994_samsung.o wm8994_viper.o
+endif
 else
 ifeq ($(CONFIG_MACH_CHIEF),y)
+ifeq ($(CONFIG_SND_VOODOO),y)
+snd-soc-wm8994-objs := wm8994_samsung.o wm8994_chief.o wm8994_voodoo.o
+else
 snd-soc-wm8994-objs := wm8994_samsung.o wm8994_chief.o
+endif
+ifeq ($(CONFIG_SND_VOODOO),y)
+snd-soc-wm8994-objs := wm8994_samsung.o wm8994_aries.o wm8994_voodoo.o
 else
 snd-soc-wm8994-objs := wm8994_samsung.o wm8994_aries.o
 endif
