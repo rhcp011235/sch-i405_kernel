@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Build script for SCH-I405 Kernel
+# Orig script taken from: https://github.com/imnuts/sch-i510_kernel/blob/gingerbread/build_kernel.sh and adapted for the SCH-I405 by rhcp011235@gmail.com
+#
+#
 
 # setup
 WORK=`pwd`
@@ -27,7 +32,7 @@ cd $WORK
 echo "***** Building for $DEVICE *****"
 
 # Make Clean and remove everything
-make mrproper > /dev/null 2>&1
+make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" mrproper 
 
 # Clean the update.zip area
 rm -f update/*.zip update/kernel_update/zImage
@@ -36,14 +41,13 @@ rm -f update/*.zip update/kernel_update/zImage
 # Thanks Imnuts for the idea
 mv .git ../.git_kernel
 
-make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" "$DEVICE"_defconfig 1>/dev/null 2>"$WORK"/errlog.txt
-make -j16 1>"$WORK"/stdlog.txt 2>>"$WORK"/errlog.txt
-
+make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" stratosphere_defconfig 
+make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" -j16 
 if [ $? != 0 ]; then
 		echo -e "FAIL!\n\n"
 		cd ..
-		mv .git_ramfs "$DEVICE"_initramfs/
-		mv .git_kernel "$WORK"
+		mv .git_ramfs "$DEVICE"_initramfs/.git
+		mv .git_kernel "$WORK"/.git
 		exit 1
 	else
 		echo -e "Success!\n"
@@ -65,7 +69,8 @@ mv kernel_update.zip ../"$DATE"_"$DEVICE".zip
 
 # Finish up
 cd ../../
-mv .git_ramfs "$DEVICE"_initramfs/
+mv .git_ramfs "$DEVICE"_initramfs/.git
+mv .git_kernel "$WORK"/.git
 cd $WORK
 echo -e "***** Successfully compiled for $DEVICE *****\n"
 
