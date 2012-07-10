@@ -11,7 +11,7 @@ DATE=$(date +%m%d)
 
 
 # Edit This for your Toolchain Dir
-TOOLCHAIN=/opt/toolchains/2009q3-68/bin/arm-none-eabi-
+TOOLCHAIN=/opt/toolchains/arm-2009q3/bin/arm-none-linux-gnueabi-
 
 
 # execution!
