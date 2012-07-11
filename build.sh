@@ -5,72 +5,92 @@
 #
 #
 
+export DEVICE="strat"
+
 # setup
-WORK=`pwd`
-DATE=$(date +%m%d)
+export WORK=`pwd`
+export DATE=$(date +%m%d)
 
 
-# Edit This for your Toolchain Dir
-TOOLCHAIN=/opt/toolchains/arm-2009q3/bin/arm-none-linux-gnueabi-
+# Declare TOOLCHAIN in the environment: TOOLCHAIN="/blah" sh build.sh
+if [ -z "$TOOLCHAIN" ]; then
+	export TOOLCHAIN=arm-eabi-
+fi
 
 
 # execution!
 cd ..
 
-# check for device we're building for
-DEVICE="strat"
-cd "$DEVICE"_initramfs
+# Ensure the initramfs exists for our device.
+if [ -d "${DEVICE}_initramfs" ]; then
+	cd "${DEVICE}_initramfs"
 
-# Move out the .git so we dont have a huge kernel and we dont boot :)
-mv .git ../.git_ramfs
+	# Move out the .git so we dont have a huge kernel and we dont boot :)
+	if [ -d ".git" ]; then
+		mv .git ../.git_ramfs
+	fi
 
+	# Build the kernel
+	cd $WORK
+	echo "***** Building for $DEVICE *****"
 
+	# Use make mrproper to clean up the directory.
+	make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" mrproper 
 
+	# Clean the update.zip area
+	rm -f update/*.zip update/kernel_update/zImage
 
-# build the kernel
-cd $WORK
-echo "***** Building for $DEVICE *****"
+	# Move out the .git for the kenrel
+	# Thanks Imnuts for the idea
+	if [ -d ".git" ]; then
+		mv .git ../.git_kernel
+	fi
 
-# Make Clean and remove everything
-make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" mrproper 
-
-# Clean the update.zip area
-rm -f update/*.zip update/kernel_update/zImage
-
-# Move out the .git for the kenrel
-# Thanks Imnuts for the idea
-mv .git ../.git_kernel
-
-make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" stratosphere_defconfig 
-make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" -j16 
-if [ $? != 0 ]; then
+	make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" stratosphere_defconfig 
+	make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" -j16 
+	if [ $? != 0 ]; then
 		echo -e "FAIL!\n\n"
 		cd ..
-		mv .git_ramfs "$DEVICE"_initramfs/.git
-		mv .git_kernel "$WORK"/.git
+		if [ -d ".git_ramfs" ]; then
+			mv .git_ramfs "$DEVICE"_initramfs/.git
+		fi
+
+		if [ -d ".git_kernel" ]; then
+			mv .git_kernel "$WORK"/.git
+		fi
+
 		exit 1
 	else
 		echo -e "Success!\n"
 		rm -f "$WORK"/*log.txt
+	fi
+
+	# Build a recovery odin file
+	cp arch/arm/boot/zImage recovery.bin
+	tar -c recovery.bin > "${DATE}_${DEVICE}_recovery.tar"
+	md5sum -t "${DATE}_${DEVICE}_recovery.tar" >> "${DATE}_${DEVICE}_recovery.tar"
+	mv "${DATE}_${DEVICE}_recovery.tar" "${DATE}_${DEVICE}_recovery.tar.md5"
+	rm recovery.bin
+
+	# Make the CWM Zip
+	cp arch/arm/boot/zImage update/kernel_update/zImage
+	cd update
+	zip -r -q ../"${DATE}_${DEVICE}.zip" .
+
+	# Finish up
+	cd ../../
+
+	if [ -d ".git_ramfs" ]; then
+		mv .git_ramfs "$DEVICE"_initramfs/.git
+	fi
+
+	if [ -d ".git_kernel" ]; then
+		mv .git_kernel "$WORK"/.git
+	fi
+
+	cd $WORK
+	echo -e "***** Successfully compiled for $DEVICE *****\n"
+else
+	echo "No initramfs found! Aborting."
+	exit 1
 fi
-
-# Build a recovery odin file
-cp arch/arm/boot/zImage recovery.bin
-tar -c recovery.bin > "$DATE"_"$DEVICE"_recovery.tar
-md5sum -t "$DATE"_"$DEVICE"_recovery.tar >> "$DATE"_"$DEVICE"_recovery.tar
-mv "$DATE"_"$DEVICE"_recovery.tar "$DATE"_"$DEVICE"_recovery.tar.md5
-rm recovery.bin
-
-# Make the CWM Zip
-cp arch/arm/boot/zImage update/kernel_update/zImage
-cd update
-zip -r -q kernel_update.zip .
-mv kernel_update.zip ../"$DATE"_"$DEVICE".zip
-
-# Finish up
-cd ../../
-mv .git_ramfs "$DEVICE"_initramfs/.git
-mv .git_kernel "$WORK"/.git
-cd $WORK
-echo -e "***** Successfully compiled for $DEVICE *****\n"
-
